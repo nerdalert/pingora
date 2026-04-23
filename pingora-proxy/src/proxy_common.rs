@@ -54,6 +54,20 @@ impl DownstreamStateMachine {
     }
 }
 
+/// Whether proxying should perform the initial downstream-to-upstream body send.
+///
+/// Returns `true` when a retry buffer exists, the body is empty, or the
+/// downstream body has already been fully consumed before duplex mode.
+/// The last case supports handlers that pre-read the body for inspection
+/// and then synthesize it from `request_body_filter()`.
+pub(crate) fn should_send_initial_body(
+    buffered_body_available: bool,
+    body_empty: bool,
+    downstream_done: bool,
+) -> bool {
+    buffered_body_available || body_empty || downstream_done
+}
+
 /// Possible upstream states during request multiplexing
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct ResponseStateMachine {

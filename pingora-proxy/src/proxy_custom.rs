@@ -21,7 +21,7 @@ use pingora_core::{
     ImmutStr,
 };
 use proxy_cache::{range_filter::RangeBodyFilter, ServeFromCache};
-use proxy_common::{DownstreamStateMachine, ResponseStateMachine};
+use proxy_common::{DownstreamStateMachine, ResponseStateMachine, should_send_initial_body};
 use tokio::sync::oneshot;
 
 use super::*;
@@ -284,11 +284,12 @@ where
 
         let mut downstream_state = DownstreamStateMachine::new(session.as_mut().is_body_done());
 
-        // retry, send buffer if it exists
-        if let Some(buffer) = session.as_mut().get_retry_buffer() {
+        let buffer = session.as_mut().get_retry_buffer();
+
+        if should_send_initial_body(buffer.is_some(), session.as_mut().is_body_empty(), downstream_state.is_done()) {
             self.send_body_to_custom(
                 session,
-                Some(buffer),
+                buffer,
                 downstream_state.is_done(),
                 client_body,
                 ctx,

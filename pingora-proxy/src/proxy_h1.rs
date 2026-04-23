@@ -306,8 +306,7 @@ where
 
         let buffer = session.as_ref().get_retry_buffer();
 
-        // retry, send buffer if it exists or body empty
-        if buffer.is_some() || session.as_mut().is_body_empty() {
+        if should_send_initial_body(buffer.is_some(), session.as_mut().is_body_empty(), downstream_state.is_done()) {
             let send_permit = tx
                 .reserve()
                 .await
